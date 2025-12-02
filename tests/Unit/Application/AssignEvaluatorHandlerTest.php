@@ -50,10 +50,12 @@ final class AssignEvaluatorHandlerTest extends MockeryTestCase
             ->with(10)
             ->andReturn($evaluator);
 
-        $assignmentRepo->shouldReceive('assign')
+        $assignmentRepo->shouldReceive('createAssignment')
             ->once()
-            ->withArgs(function (Candidate $c, Evaluator $e): bool {
-                return $c->id() === 1 && $e->id() === 10;
+            ->withArgs(function (Candidate $c, Evaluator $e, DateTimeImmutable $assignedAt): bool {
+                return $c->id() === 1
+                    && $e->id() === 10
+                    && $assignedAt instanceof DateTimeImmutable;
             })
             ->andReturn(
                 new Assignment(
@@ -63,6 +65,7 @@ final class AssignEvaluatorHandlerTest extends MockeryTestCase
                     assignedAt: new DateTimeImmutable(),
                 )
             );
+
 
         $handler = new AssignEvaluatorHandler(
             $candidateRepo,

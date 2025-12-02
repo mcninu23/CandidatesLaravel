@@ -12,25 +12,6 @@ use PHPUnit\Framework\TestCase;
 
 final class ValidEmailRuleTest extends TestCase
 {
-    public function test_fails_when_email_is_invalid(): void
-    {
-        $rule = new ValidEmailRule();
-
-        $candidate = new Candidate(
-            id: 1,
-            fullName: 'Juan Candidato',
-            email: new CandidateEmail('not-an-email'),
-            yearsExperience: new YearsOfExperience(3),
-            cvText: 'CV',
-            status: 'pending',
-        );
-
-        $result = $rule->validate($candidate);
-
-        $this->assertSame('valid_email', $result->ruleName);
-        $this->assertFalse($result->passed);
-        $this->assertSame('El email del candidato no es válido.', $result->message);
-    }
 
     public function test_passes_when_email_is_valid(): void
     {
@@ -51,4 +32,6 @@ final class ValidEmailRuleTest extends TestCase
         $this->assertTrue($result->passed);
         $this->assertNull($result->message);
     }
+
+    // When email is invalid or empty, VO throws exception, so no need to test here.
 }

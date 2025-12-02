@@ -35,6 +35,46 @@ final class CandidateValidatorTest extends TestCase
         $this->assertTrue($validator->isValid($candidate));
     }
 
+    public function test_validator_throws_exception_when_mail_is_empty(): void
+    {
+        $validator = new CandidateValidator([
+            new HasCvRule(),
+            new ValidEmailRule(),
+            new MinExperienceRule(2),
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Candidate email cannot be empty.');
+        $candidate = new Candidate(
+            id: 2,
+            fullName: 'Junior Sin CV',
+            email: new CandidateEmail(''),
+            yearsExperience: new YearsOfExperience(0),
+            cvText: '',
+            status: 'pending',
+        );
+    }
+
+    public function test_validator_throws_exception_when_mail_is_not_valid(): void
+    {
+        $validator = new CandidateValidator([
+            new HasCvRule(),
+            new ValidEmailRule(),
+            new MinExperienceRule(2),
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid candidate email: "no-email"');
+        $candidate = new Candidate(
+            id: 2,
+            fullName: 'Junior Sin CV',
+            email: new CandidateEmail('no-email'),
+            yearsExperience: new YearsOfExperience(0),
+            cvText: '',
+            status: 'pending',
+        );
+    }
+
     public function test_validator_returns_false_when_some_rules_fail(): void
     {
         $validator = new CandidateValidator([
@@ -46,8 +86,11 @@ final class CandidateValidatorTest extends TestCase
         $candidate = new Candidate(
             id: 2,
             fullName: 'Junior Sin CV',
-            email: new CandidateEmail('no-email'),
+            // Email válido, para no chocar con el VO
+            email: new CandidateEmail('junior@example.com'),
+            // Experiencia insuficiente
             yearsExperience: new YearsOfExperience(0),
+            // CV vacío
             cvText: '',
             status: 'pending',
         );
@@ -57,4 +100,5 @@ final class CandidateValidatorTest extends TestCase
         $results = $validator->validate($candidate);
         $this->assertCount(3, $results);
     }
+
 }
