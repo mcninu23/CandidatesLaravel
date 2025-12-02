@@ -6,259 +6,151 @@ Este proyecto implementa una API modular, escalable y desacoplada en Laravel, si
 
 # 📑 Índice
 
-1. 🎯 [Objetivo del proyecto](#-objetivo-del-proyecto)  
-2. 🏗 [Arquitectura y diseño](#-arquitectura-y-diseño)  
-   - [Capas del sistema](#capas-del-sistema)  
-   - [Decisiones de diseño](#decisiones-de-diseño)  
-   - [Patrones usados](#patrones-usados)  
-3. 📂 [Estructura del proyecto](#-estructura-del-proyecto)  
-4. 🧠 [Dominio](#-dominio)  
-5. ⚙ [Funcionalidades principales](#-funcionalidades-principales)  
-6. 🧪 [Tests automáticos](#-tests-automáticos)  
-7. 📊 [Exportación de Excel asíncrona](#-exportación-de-excel-asíncrona)  
-8. ⚡ [Escalabilidad horizontal](#-escalabilidad-horizontal)  
-9. ▶️ [Cómo ejecutar el proyecto](#️-cómo-ejecutar-el-proyecto)  
-10. 📬 [Endpoints](#-endpoints)
+1. 🎯 Objetivo del proyecto  
+2. 🏗 Arquitectura y diseño  
+3. 📂 Estructura del proyecto  
+4. 🧠 Dominio  
+5. ⚙ Funcionalidades principales  
+6. 🧪 Tests automáticos  
+7. 📊 Exportación de Excel asíncrona  
+8. ⚡ Escalabilidad horizontal  
+9. ▶️ Cómo ejecutar el proyecto  
+10. 📬 Endpoints
 
 ---
 
 # 🎯 Objetivo del proyecto
 
-El objetivo es implementar una API REST completa capaz de gestionar:
-
-- Candidatos  
-- Validación extensible de candidaturas  
-- Evaluadores  
-- Asignaciones  
-- Listado consolidado con estadísticas  
-- Exportación a Excel en procesos asíncronos  
-- Notificación por email al finalizar la exportación
-
-El proyecto pone especial foco en:
-
-- Arquitectura limpia  
-- Desacoplamiento del framework  
-- Patrones de diseño  
-- SQL complejo y eficiente  
-- Testing  
-- Escalabilidad horizontal
+Implementar una API REST completa capaz de gestionar candidatos, validarlos mediante un sistema extensible, asignar evaluadores, generar un listado consolidado con SQL optimizado y exportarlo a Excel mediante procesos asíncronos en colas.
 
 ---
 
 # 🏗 Arquitectura y diseño
 
-El proyecto utiliza una **Arquitectura Limpia / Hexagonal** donde cada capa tiene una responsabilidad clara:
+Este proyecto utiliza una **Arquitectura Limpia / Hexagonal**, dividiendo el código en capas:
 
-- **Domain:** Reglas de negocio puras, entidades y Value Objects  
-- **Application:** Casos de uso (orquestación)  
-- **Infrastructure:** Base de datos, Eloquent, Jobs, controladores, servicios externos  
-- **Interface / Delivery:** API HTTP
+- **Domain:** reglas de negocio puras  
+- **Application:** casos de uso  
+- **Infrastructure:** repositorios, controladores, Eloquent, Jobs  
+- **Interfaces:** API HTTP
 
----
+### Patrones utilizados
 
-## Capas del sistema
-
-app/
-├── Domain/
-│ ├── Candidate/
-│ ├── Evaluator/
-│ └── Assignment/
-│
-├── Application/
-│ ├── UseCases/
-│ └── Contracts/
-│
-└── Infrastructure/
-├── Persistence/
-│ └── Eloquent/
-├── Http/Controllers/
-└── Excel/
-
-
----
-
-## Decisiones de diseño
-
-- **Dominio rico:** las invariantes se validan mediante value objects.
-- **Validación extensible:** Chain of Responsibility permite añadir reglas sin modificar las existentes.
-- **Repositorios basados en interfaces:** evita dependencia con Eloquent.
-- **DTOs para respuestas:** evita filtrar entidades del dominio.
-- **SQL optimizado:** joins, group_concat, COUNT(DISTINCT), subconsultas, orden dinámico y filtros.
-- **Procesamiento pesado en colas:** exportación Excel ejecutada mediante workers.
-
----
-
-## Patrones usados
-
-| Patrón | Uso |
-|-------|-----|
-| Value Object | Email, YearsExperience |
-| Entity | Candidate, Evaluator, Assignment |
-| Repository | Contratos + implementaciones Eloquent |
-| Chain of Responsibility | Validación de Candidatos |
-| Use Case (Interactor) | Lógica de aplicación |
-| DTO | Respuestas de casos de uso |
-| Strategy (implícito) | Normalizadores, filtros |
+- Value Objects  
+- Entidades ricas  
+- Repositorio (Interfaces + Implementaciones)  
+- Chain of Responsibility (validación extensible)  
+- Use Case  
+- DTOs  
+- Jobs y colas  
 
 ---
 
 # 📂 Estructura del proyecto
 
+```
 app/
-├── Domain/
-│ ├── Candidate/
-│ │ ├── Entities/Candidate.php
-│ │ ├── ValueObjects/
-│ │ └── ValidationRules/
-│ ├── Evaluator/
-│ └── Assignment/
-│
-├── Application/
-│ ├── UseCases/
-│ └── Contracts/
-│
-└── Infrastructure/
-├── Persistence/Eloquent/
-├── Http/Controllers/
-├── Excel/
-└── Jobs/
-
+ ├── Domain/
+ ├── Application/
+ └── Infrastructure/
+```
 
 ---
 
 # 🧠 Dominio
 
-El dominio contiene:
+Incluye:
 
-### **Entidades**
-- Candidate  
-- Evaluator  
-- Assignment  
-
-### **Value Objects**
-- `CandidateEmail`  
-- `YearsOfExperience`  
-
-### **Reglas extensibles de validación**
-- `HasCvRule`  
-- `ValidEmailRule`  
-- `MinExperienceRule`  
-
-Cada regla implementa una interfaz común y se encadena dinámicamente.
+- Entidades: Candidate, Evaluator, Assignment  
+- Value Objects: CandidateEmail, YearsOfExperience  
+- Reglas de validación extensibles: HasCvRule, ValidEmailRule, MinExperienceRule  
 
 ---
 
 # ⚙ Funcionalidades principales
 
-### ✔ Registro de candidatos  
-### ✔ Validación extensible de candidatos  
-### ✔ Gestión de evaluadores  
-### ✔ Asignación candidato → evaluador  
-### ✔ Listado consolidado con SQL avanzado  
-Incluye:
-- total de asignaciones por evaluador  
-- concatenación de emails  
-- orden dinámico  
-- filtros  
-- paginación  
-
-### ✔ Resumen de candidatura  
-### ✔ Exportación Excel con 50 registros por página  
-### ✔ Envío de email notificando la exportación  
+- Registro de candidatos  
+- Validación extensible  
+- Gestión de evaluadores  
+- Asignación evaluador → candidato  
+- Listado SQL consolidado  
+- Resumen de candidatura  
+- Exportación Excel paginada (50 registros por hoja)  
+- Proceso asíncrono con colas y email de notificación  
 
 ---
 
 # 🧪 Tests automáticos
 
-Incluye:
-
-### ✔ Tests unitarios
-- Reglas de validación  
-- CandidateValidator  
-- AssignEvaluatorHandler  
-
-### ✔ Test feature
-- Resumen de candidatura
-
-### ✔ Test de integración
-- SQL del listado consolidado con DB real (SQLite)
+- Tests unitarios (reglas + use cases)  
+- Test feature  
+- Test de integración con base de datos real  
 
 Ejecutar:
 
-```bash
+```
 php artisan test
+```
 
+---
 
-📊 Exportación de Excel y proceso asíncrono
+# 📊 Exportación de Excel asíncrona 
+
 Flujo:
 
-Cliente llama:
-
-POST /api/candidates/consolidated/export/async
-
-
-Se encola ExportConsolidatedCandidatesJob
-
-El worker genera un Excel:
-
-storage/app/private/exports/*.xlsx
-
-
-(Opcional) Se envía email al usuario notificando que ya está disponible
+1. `/api/candidates/consolidated/export/async`  
+2. Job `ExportConsolidatedCandidatesJob`  
+3. Excel generado en `storage/app/private/exports`  
+4. Email opcional enviado al usuario  ->  (ESTA PARTE AÚN NO ESTA IMPLEMENTADA)
 
 Worker:
 
+```
 php artisan queue:work
+```
 
-⚡ Escalabilidad horizontal
+---
+
+# ⚡ Escalabilidad horizontal
 
 El sistema soporta:
 
-Ejecución distribuida de trabajos en cola
+- Colas distribuidas  
+- Cache  
+- Jobs idempotentes  
+- Dominio desacoplado del framework  
+- SQL optimizado  
 
-Exportaciones pesadas sin bloquear el servidor HTTP
+---
 
-Capa de dominio desacoplada → permite cambiar DB o framework
+# ▶️ Cómo ejecutar el proyecto
 
-Posibilidad de cachear agregaciones mediante Redis
-
-Idempotencia en asignaciones (evita duplicados)
-
-▶️ Cómo ejecutar el proyecto
-1. Instalar dependencias
+```
 composer install
-
-2. Copiar configuración base
 cp .env.example .env
 php artisan key:generate
-
-3. Migrar base de datos
 php artisan migrate --seed
-
-4. Arrancar servidor
 php artisan serve
-
-5. Arrancar worker de colas
 php artisan queue:work
+```
 
-6. Ejecutar tests
-php artisan test
+---
 
-📬 Endpoints y documentación
-Ping
-GET /api/ping
+# 📬 Endpoints
 
-Candidatos
-POST /api/candidates
-GET /api/candidates/{id}
-GET /api/candidates/{id}/summary
+### Ping
+- `GET /api/ping`
 
-Evaluadores
-POST /api/evaluators
+### Candidatos
+- `POST /api/candidates`
+- `GET /api/candidates/{id}`
+- `GET /api/candidates/{id}/summary`
+- `POST /api/candidates/{id}/validate`
 
-Asignación
-POST /api/candidates/{id}/assign
+### Asignación
+- `POST /api/candidates/{id}/assign-evaluator`
 
-Consolidado
-GET /api/candidates/consolidated
-POST /api/candidates/consolidated/export/async
+### Listado consolidado
+- `GET /api/candidates/consolidated`
+- `GET /api/candidates/consolidated/export`
+- `POST /api/candidates/consolidated/export/async`
