@@ -6,43 +6,113 @@ Este proyecto implementa una API modular, escalable y desacoplada en Laravel, si
 
 # 📑 Índice
 
-1. 🎯 Objetivo del proyecto  
-2. 🏗 Arquitectura y diseño  
-3. 📂 Estructura del proyecto  
-4. 🧠 Dominio  
-5. ⚙ Funcionalidades principales  
-6. 🧪 Tests automáticos  
-7. 📊 Exportación de Excel asíncrona  
-8. ⚡ Escalabilidad horizontal  
-9. ▶️ Cómo ejecutar el proyecto  
-10. 📬 Endpoints
+1. 🎯 Objetivo del proyecto
+2. 🏗 Arquitectura y diseño
+   - Capas del sistema
+   - Decisiones de diseño
+   - Patrones usados
+3. 📂 Estructura del proyecto
+4. 🧠 Dominio
+5. ⚙ Funcionalidades principales
+6. 🧪 Tests automáticos
+7. 📊 Exportación de Excel y proceso asíncrono
+8. ⚡ Escalabilidad horizontal
+9. ▶️ Cómo ejecutar el proyecto
+10. 📬 Endpoints y documentación
 
 ---
 
 # 🎯 Objetivo del proyecto
 
-Implementar una API REST completa capaz de gestionar candidatos, validarlos mediante un sistema extensible, asignar evaluadores, generar un listado consolidado con SQL optimizado y exportarlo a Excel mediante procesos asíncronos en colas.
+El objetivo es implementar una API REST robusta para:
+
+- Registro de candidatos
+- Validación extensible mediante reglas
+- Gestión de evaluadores
+- Asignación evaluador → candidato
+- Listado consolidado con SQL avanzado
+- Resumen extendido de cada candidato
+- Exportación de datos a Excel mediante colas
+- Envío de email notificando la exportación
+
+El foco principal es:
+
+- Arquitectura limpia
+- Desacoplamiento del framework
+- Uso de patrones avanzados
+- Testing completo
+- Escalabilidad real
 
 ---
 
 # 🏗 Arquitectura y diseño
 
-Este proyecto utiliza una **Arquitectura Limpia / Hexagonal**, dividiendo el código en capas:
+Se adopta una **Arquitectura Limpia/Hexagonal**, separando claramente:
 
-- **Domain:** reglas de negocio puras  
-- **Application:** casos de uso  
-- **Infrastructure:** repositorios, controladores, Eloquent, Jobs  
-- **Interfaces:** API HTTP
+- **Domain** → reglas de negocio puras (sin Laravel)
+- **Application** → casos de uso
+- **Infrastructure** → Eloquent, Jobs, controladores
+- **Interfaces** → API pública
 
-### Patrones utilizados
+## Capas del sistema
 
-- Value Objects  
-- Entidades ricas  
-- Repositorio (Interfaces + Implementaciones)  
-- Chain of Responsibility (validación extensible)  
-- Use Case  
-- DTOs  
-- Jobs y colas  
+```
+app/
+ ├── Domain/
+ │   ├── Candidate/
+ │   ├── Evaluator/
+ │   └── Assignment/
+ ├── Application/
+ │   ├── UseCases/
+ │   ├── DTO/
+ │   └── Contracts/
+ └── Infrastructure/
+     ├── Persistence/Eloquent/
+     ├── Excel/
+     ├── Http/Controllers/
+     └── Jobs/
+```
+
+---
+
+## Decisiones de diseño
+
+### ✔ Desacoplamiento del framework
+Toda la lógica de negocio depende de **interfaces**, nunca de Eloquent.
+
+### ✔ Dominio rico
+Las invariantes se protegen mediante Value Objects y entidades con reglas internas.
+
+### ✔ Validación flexible
+El sistema usa **Chain of Responsibility**, permitiendo agregar reglas sin romper las anteriores.
+
+### ✔ SQL optimizado
+El consolidado usa:
+
+- Subconsultas
+- DISTINCT + COUNT
+- GROUP_CONCAT
+- Orden dinámico
+- Filtros arbitrarios
+- Paginación eficiente
+
+### ✔ Procesos pesados en segundo plano
+La exportación Excel no bloquea la API.
+
+---
+
+## Patrones usados
+
+| Patrón | Uso |
+|--------|-----|
+| **Value Object** | Email, experiencia |
+| **Entity** | Candidate, Evaluator, Assignment |
+| **Repository Pattern** | Interfaces + implementación Eloquent |
+| **Chain of Responsibility** | Validación |
+| **Use Case / Interactor** | Lógica de aplicación |
+| **DTO** | Respuestas tipadas |
+| **Strategy (implícito)** | Orden y filtros |
+| **Job / Queue Worker** | Exportaciones pesadas |
 
 ---
 
@@ -51,40 +121,79 @@ Este proyecto utiliza una **Arquitectura Limpia / Hexagonal**, dividiendo el có
 ```
 app/
  ├── Domain/
+ │   ├── Candidate/
+ │   │   ├── Entities/
+ │   │   ├── ValueObjects/
+ │   │   └── ValidationRules/
+ │   ├── Evaluator/
+ │   └── Assignment/
+ │
  ├── Application/
+ │   ├── UseCases/
+ │   ├── DTO/
+ │   └── Contracts/
+ │
  └── Infrastructure/
+     ├── Persistence/Eloquent/Models
+     ├── Persistence/Eloquent/Repositories
+     ├── Excel/
+     ├── Http/Controllers
+     └── Jobs/
 ```
 
 ---
 
 # 🧠 Dominio
 
-Incluye:
+### Entidades
+- Candidate  
+- Evaluator  
+- Assignment  
 
-- Entidades: Candidate, Evaluator, Assignment  
-- Value Objects: CandidateEmail, YearsOfExperience  
-- Reglas de validación extensibles: HasCvRule, ValidEmailRule, MinExperienceRule  
+### Value Objects
+- CandidateEmail  
+- YearsOfExperience  
+
+### Reglas de Validación Encadenadas
+- `HasCvRule`
+- `ValidEmailRule`
+- `MinExperienceRule`
+
+Sistema extensible sin modificar reglas existentes.
 
 ---
 
 # ⚙ Funcionalidades principales
 
-- Registro de candidatos  
-- Validación extensible  
-- Gestión de evaluadores  
-- Asignación evaluador → candidato  
-- Listado SQL consolidado  
-- Resumen de candidatura  
-- Exportación Excel paginada (50 registros por hoja)  
-- Proceso asíncrono con colas y email de notificación  
+✔ Registro de candidatos  
+✔ Validación mediante cadena de reglas  
+✔ Gestión de evaluadores  
+✔ Asignación evaluador → candidato  
+✔ Listado consolidado con métricas:  
+   - total candidatos por evaluador  
+   - emails concatenados  
+   - orden + filtros  
+   - paginación  
+✔ Resumen completo de candidatura  
+✔ Exportación Excel (50 por hoja)  
+✔ Worker + email de notificación  -> (el mail aun no se está enviando)
 
 ---
 
 # 🧪 Tests automáticos
 
-- Tests unitarios (reglas + use cases)  
-- Test feature  
-- Test de integración con base de datos real  
+Incluye:
+
+### Tests unitarios
+- Reglas de validación  
+- CandidateValidator  
+- AssignEvaluatorHandler  
+
+### Test de integración
+- SQL consolidado con BD real  
+
+### Test feature
+- Resumen de candidatura  
 
 Ejecutar:
 
@@ -94,14 +203,20 @@ php artisan test
 
 ---
 
-# 📊 Exportación de Excel asíncrona 
+# 📊 Exportación de Excel y proceso asíncrono
 
-Flujo:
+### Flujo:
 
-1. `/api/candidates/consolidated/export/async`  
-2. Job `ExportConsolidatedCandidatesJob`  
-3. Excel generado en `storage/app/private/exports`  
-4. Email opcional enviado al usuario  ->  (ESTA PARTE AÚN NO ESTA IMPLEMENTADA)
+1. Cliente llama:
+```
+POST /api/candidates/consolidated/export/async
+```
+2. Se encola `ExportConsolidatedCandidatesJob`
+3. El worker genera:
+```
+storage/app/private/exports/*.xlsx
+```
+4. Email notificando resultado
 
 Worker:
 
@@ -113,13 +228,11 @@ php artisan queue:work
 
 # ⚡ Escalabilidad horizontal
 
-El sistema soporta:
-
 - Colas distribuidas  
-- Cache  
+- Cache opcional para queries pesadas  
 - Jobs idempotentes  
 - Dominio desacoplado del framework  
-- SQL optimizado  
+- Posibilidad de múltiples workers concurrentes  
 
 ---
 
@@ -129,28 +242,52 @@ El sistema soporta:
 composer install
 cp .env.example .env
 php artisan key:generate
+
 php artisan migrate --seed
+
 php artisan serve
 php artisan queue:work
 ```
 
 ---
 
-# 📬 Endpoints
+# 📬 Endpoints y documentación
 
 ### Ping
-- `GET /api/ping`
+```
+GET /api/ping
+```
 
 ### Candidatos
-- `POST /api/candidates`
-- `GET /api/candidates/{id}`
-- `GET /api/candidates/{id}/summary`
-- `POST /api/candidates/{id}/validate`
+```
+POST /api/candidates
+GET /api/candidates/{id}
+GET /api/candidates/{id}/summary
+POST /api/candidates/{id}/validate
+```
 
 ### Asignación
-- `POST /api/candidates/{id}/assign-evaluator`
+```
+POST /api/candidates/{id}/assign-evaluator
+```
 
-### Listado consolidado
-- `GET /api/candidates/consolidated`
-- `GET /api/candidates/consolidated/export`
-- `POST /api/candidates/consolidated/export/async`
+### Consolidado
+```
+GET /api/candidates/consolidated
+GET /api/candidates/consolidated/export
+POST /api/candidates/consolidated/export/async
+```
+
+---
+
+# ✔ Estado del proyecto
+
+El proyecto cumple con:
+
+- Arquitectura limpia real  
+- Dominio desacoplado  
+- SQL complejo  
+- Testing completo  
+- Procesos asíncronos  
+- Exportación Excel avanzada  
+- Diseño escalable y mantenible  
