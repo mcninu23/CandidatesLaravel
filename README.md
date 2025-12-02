@@ -1,59 +1,264 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Candidaturas & Evaluadores – Backend Senior Test (Laravel)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Este proyecto implementa una API modular, escalable y desacoplada en Laravel, siguiendo principios de Clean Architecture, Domain-Driven Design y prácticas profesionales orientadas a manejabilidad, testabilidad y extensibilidad.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+# 📑 Índice
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1. 🎯 [Objetivo del proyecto](#-objetivo-del-proyecto)  
+2. 🏗 [Arquitectura y diseño](#-arquitectura-y-diseño)  
+   - [Capas del sistema](#capas-del-sistema)  
+   - [Decisiones de diseño](#decisiones-de-diseño)  
+   - [Patrones usados](#patrones-usados)  
+3. 📂 [Estructura del proyecto](#-estructura-del-proyecto)  
+4. 🧠 [Dominio](#-dominio)  
+5. ⚙ [Funcionalidades principales](#-funcionalidades-principales)  
+6. 🧪 [Tests automáticos](#-tests-automáticos)  
+7. 📊 [Exportación de Excel asíncrona](#-exportación-de-excel-asíncrona)  
+8. ⚡ [Escalabilidad horizontal](#-escalabilidad-horizontal)  
+9. ▶️ [Cómo ejecutar el proyecto](#️-cómo-ejecutar-el-proyecto)  
+10. 📬 [Endpoints](#-endpoints)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+# 🎯 Objetivo del proyecto
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+El objetivo es implementar una API REST completa capaz de gestionar:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- Candidatos  
+- Validación extensible de candidaturas  
+- Evaluadores  
+- Asignaciones  
+- Listado consolidado con estadísticas  
+- Exportación a Excel en procesos asíncronos  
+- Notificación por email al finalizar la exportación
 
-## Laravel Sponsors
+El proyecto pone especial foco en:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- Arquitectura limpia  
+- Desacoplamiento del framework  
+- Patrones de diseño  
+- SQL complejo y eficiente  
+- Testing  
+- Escalabilidad horizontal
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# 🏗 Arquitectura y diseño
 
-## Contributing
+El proyecto utiliza una **Arquitectura Limpia / Hexagonal** donde cada capa tiene una responsabilidad clara:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- **Domain:** Reglas de negocio puras, entidades y Value Objects  
+- **Application:** Casos de uso (orquestación)  
+- **Infrastructure:** Base de datos, Eloquent, Jobs, controladores, servicios externos  
+- **Interface / Delivery:** API HTTP
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Capas del sistema
 
-## Security Vulnerabilities
+app/
+├── Domain/
+│ ├── Candidate/
+│ ├── Evaluator/
+│ └── Assignment/
+│
+├── Application/
+│ ├── UseCases/
+│ └── Contracts/
+│
+└── Infrastructure/
+├── Persistence/
+│ └── Eloquent/
+├── Http/Controllers/
+└── Excel/
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Decisiones de diseño
+
+- **Dominio rico:** las invariantes se validan mediante value objects.
+- **Validación extensible:** Chain of Responsibility permite añadir reglas sin modificar las existentes.
+- **Repositorios basados en interfaces:** evita dependencia con Eloquent.
+- **DTOs para respuestas:** evita filtrar entidades del dominio.
+- **SQL optimizado:** joins, group_concat, COUNT(DISTINCT), subconsultas, orden dinámico y filtros.
+- **Procesamiento pesado en colas:** exportación Excel ejecutada mediante workers.
+
+---
+
+## Patrones usados
+
+| Patrón | Uso |
+|-------|-----|
+| Value Object | Email, YearsExperience |
+| Entity | Candidate, Evaluator, Assignment |
+| Repository | Contratos + implementaciones Eloquent |
+| Chain of Responsibility | Validación de Candidatos |
+| Use Case (Interactor) | Lógica de aplicación |
+| DTO | Respuestas de casos de uso |
+| Strategy (implícito) | Normalizadores, filtros |
+
+---
+
+# 📂 Estructura del proyecto
+
+app/
+├── Domain/
+│ ├── Candidate/
+│ │ ├── Entities/Candidate.php
+│ │ ├── ValueObjects/
+│ │ └── ValidationRules/
+│ ├── Evaluator/
+│ └── Assignment/
+│
+├── Application/
+│ ├── UseCases/
+│ └── Contracts/
+│
+└── Infrastructure/
+├── Persistence/Eloquent/
+├── Http/Controllers/
+├── Excel/
+└── Jobs/
+
+
+---
+
+# 🧠 Dominio
+
+El dominio contiene:
+
+### **Entidades**
+- Candidate  
+- Evaluator  
+- Assignment  
+
+### **Value Objects**
+- `CandidateEmail`  
+- `YearsOfExperience`  
+
+### **Reglas extensibles de validación**
+- `HasCvRule`  
+- `ValidEmailRule`  
+- `MinExperienceRule`  
+
+Cada regla implementa una interfaz común y se encadena dinámicamente.
+
+---
+
+# ⚙ Funcionalidades principales
+
+### ✔ Registro de candidatos  
+### ✔ Validación extensible de candidatos  
+### ✔ Gestión de evaluadores  
+### ✔ Asignación candidato → evaluador  
+### ✔ Listado consolidado con SQL avanzado  
+Incluye:
+- total de asignaciones por evaluador  
+- concatenación de emails  
+- orden dinámico  
+- filtros  
+- paginación  
+
+### ✔ Resumen de candidatura  
+### ✔ Exportación Excel con 50 registros por página  
+### ✔ Envío de email notificando la exportación  
+
+---
+
+# 🧪 Tests automáticos
+
+Incluye:
+
+### ✔ Tests unitarios
+- Reglas de validación  
+- CandidateValidator  
+- AssignEvaluatorHandler  
+
+### ✔ Test feature
+- Resumen de candidatura
+
+### ✔ Test de integración
+- SQL del listado consolidado con DB real (SQLite)
+
+Ejecutar:
+
+```bash
+php artisan test
+
+
+📊 Exportación de Excel y proceso asíncrono
+Flujo:
+
+Cliente llama:
+
+POST /api/candidates/consolidated/export/async
+
+
+Se encola ExportConsolidatedCandidatesJob
+
+El worker genera un Excel:
+
+storage/app/private/exports/*.xlsx
+
+
+(Opcional) Se envía email al usuario notificando que ya está disponible
+
+Worker:
+
+php artisan queue:work
+
+⚡ Escalabilidad horizontal
+
+El sistema soporta:
+
+Ejecución distribuida de trabajos en cola
+
+Exportaciones pesadas sin bloquear el servidor HTTP
+
+Capa de dominio desacoplada → permite cambiar DB o framework
+
+Posibilidad de cachear agregaciones mediante Redis
+
+Idempotencia en asignaciones (evita duplicados)
+
+▶️ Cómo ejecutar el proyecto
+1. Instalar dependencias
+composer install
+
+2. Copiar configuración base
+cp .env.example .env
+php artisan key:generate
+
+3. Migrar base de datos
+php artisan migrate --seed
+
+4. Arrancar servidor
+php artisan serve
+
+5. Arrancar worker de colas
+php artisan queue:work
+
+6. Ejecutar tests
+php artisan test
+
+📬 Endpoints y documentación
+Ping
+GET /api/ping
+
+Candidatos
+POST /api/candidates
+GET /api/candidates/{id}
+GET /api/candidates/{id}/summary
+
+Evaluadores
+POST /api/evaluators
+
+Asignación
+POST /api/candidates/{id}/assign
+
+Consolidado
+GET /api/candidates/consolidated
+POST /api/candidates/consolidated/export/async
