@@ -2,45 +2,53 @@
 
 declare(strict_types=1);
 
+namespace Tests\Unit\Candidate\Validation;
+
 use App\Domain\Candidate\Entities\Candidate;
 use App\Domain\Candidate\ValidationRules\HasCvRule;
 use App\Domain\Candidate\ValueObjects\CandidateEmail;
 use App\Domain\Candidate\ValueObjects\YearsOfExperience;
+use PHPUnit\Framework\TestCase;
 
-it('fails when candidate has empty CV', function () {
-    $rule = new HasCvRule();
+final class HasCvRuleTest extends TestCase
+{
+    public function test_fails_when_candidate_has_empty_cv(): void
+    {
+        $rule = new HasCvRule();
 
-    $candidate = new Candidate(
-        id: 1,
-        fullName: 'Juan Candidato',
-        email: new CandidateEmail('juan@example.com'),
-        yearsExperience: new YearsOfExperience(3),
-        cvText: '',
-        status: 'pending',
-    );
+        $candidate = new Candidate(
+            id: 1,
+            fullName: 'Juan Candidato',
+            email: new CandidateEmail('juan@example.com'),
+            yearsExperience: new YearsOfExperience(3),
+            cvText: '',
+            status: 'pending',
+        );
 
-    $result = $rule->validate($candidate);
+        $result = $rule->validate($candidate);
 
-    expect($result->ruleName)->toBe('has_cv')
-        ->and($result->passed)->toBeFalse()
-        ->and($result->message)->toBe('El candidato debe aportar CV.');
-});
+        $this->assertSame('has_cv', $result->ruleName);
+        $this->assertFalse($result->passed);
+        $this->assertSame('El candidato debe aportar CV.', $result->message);
+    }
 
-it('passes when candidate has non empty CV', function () {
-    $rule = new HasCvRule();
+    public function test_passes_when_candidate_has_non_empty_cv(): void
+    {
+        $rule = new HasCvRule();
 
-    $candidate = new Candidate(
-        id: 1,
-        fullName: 'Juan Candidato',
-        email: new CandidateEmail('juan@example.com'),
-        yearsExperience: new YearsOfExperience(3),
-        cvText: 'Experiencia en PHP y Laravel',
-        status: 'pending',
-    );
+        $candidate = new Candidate(
+            id: 1,
+            fullName: 'Juan Candidato',
+            email: new CandidateEmail('juan@example.com'),
+            yearsExperience: new YearsOfExperience(3),
+            cvText: 'Experiencia en PHP y Laravel',
+            status: 'pending',
+        );
 
-    $result = $rule->validate($candidate);
+        $result = $rule->validate($candidate);
 
-    expect($result->ruleName)->toBe('has_cv')
-        ->and($result->passed)->toBeTrue()
-        ->and($result->message)->toBeNull();
-});
+        $this->assertSame('has_cv', $result->ruleName);
+        $this->assertTrue($result->passed);
+        $this->assertNull($result->message);
+    }
+}
